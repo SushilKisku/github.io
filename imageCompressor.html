@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universal Image Compressor</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  input, button { margin: 10px 0; }
+  img { max-width: 100%; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h2>Universal Image Compressor</h2>
+
+<input type="file" id="upload" accept="image/*">
+<br>
+<label for="quality">Compression Quality (0.1 to 1, lower = smaller file): </label>
+<input type="number" id="quality" min="0.1" max="1" step="0.1" value="0.8">
+<br>
+<button id="compressBtn">Compress Image</button>
+
+<h3>Compressed Image:</h3>
+<p id="sizeInfo"></p>
+<a id="downloadLink" style="display:none;" download="compressed_image">Download Compressed Image</a>
+<br>
+<img id="output" src="" alt="Compressed Preview">
+
+<script>
+document.getElementById('compressBtn').addEventListener('click', function() {
+    const fileInput = document.getElementById('upload');
+    const quality = parseFloat(document.getElementById('quality').value);
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please select an image!");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Determine output type
+            let outputType = 'image/jpeg';
+            if (file.type === 'image/png') outputType = 'image/png';
+            else if (file.type === 'image/webp') outputType = 'image/webp';
+            else if (file.type === 'image/gif') outputType = 'image/png'; // GIF -> PNG conversion for compression
+
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const output = document.getElementById('output');
+                const downloadLink = document.getElementById('downloadLink');
+                const sizeInfo = document.getElementById('sizeInfo');
+
+                output.src = url;
+                downloadLink.href = url;
+                downloadLink.style.display = 'inline';
+                
+                // Show estimated compressed size in KB
+                const sizeKB = (blob.size / 1024).toFixed(2);
+                sizeInfo.textContent = `Estimated compressed size: ${sizeKB} KB`;
+            }, outputType, quality);
+        };
+    };
+
+    reader.readAsDataURL(file);
+});
+</script>
+</body>
+</html>
